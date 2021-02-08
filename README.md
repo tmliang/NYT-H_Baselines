@@ -16,13 +16,13 @@ CUDA_VISIBLE_DEVICES=0 python main.py --encoder PCNN --lr 0.5 --batch_size 100
         <th> Track </th><th> Model </th><th> Precsion </th> <th> Recall </th> <th> F1-Score </th>
     </tr>
     <tr>
-        <td rowspan="3"> Bag2Bag </td><td> CNN+ATT </td><td text-align:center> 60.272 </td><td> 38.527 </td><td> 44.762 </td>
+        <td rowspan="3"> Bag2Bag </td><td> CNN+ATT </td><td align="center"> 60.272 </td><td align="center"> 38.527 </td><td align="center"> 44.762 </td>
     </tr>
     <tr>
-        <td> PCNN+ATT </td><td> 60.272 </td><td> 38.527 </td><td> 44.762 </td>
+        <td> PCNN+ATT </td><td align="center"> 60.272 </td><td align="center"> 38.527 </td><td align="center"> 44.762 </td>
     </tr>
     <tr>
-        </td><td> BiGRU+ATT </td><td> 60.272 </td><td> 38.527 </td><td> 44.762 </td>
+        </td><td> BiGRU+ATT </td><td align="center"> 60.272 </td><td align="center"> 38.527 </td><td align="center"> 44.762 </td>
     </tr>
 </table>
 
