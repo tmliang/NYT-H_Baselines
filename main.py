@@ -21,7 +21,7 @@ def train(train_loader, test_loader, opt):
     optimizer = optim.SGD(model.parameters(), lr=opt['lr'], weight_decay=opt['weight_decay'])
     step_num = len(train_loader)
     not_best_count = 0
-    best_result = 0
+    best_result = np.zeros(3, dtype=np.float32)
     ckpt = os.path.join(opt['output_dir'], opt['name']+'.pth.tar')
     for epoch in range(opt['epoch']):
         model.train()
@@ -52,15 +52,17 @@ def train(train_loader, test_loader, opt):
         if avg_pos_acc.avg > 0.5:
             print("")
             result = test(test_loader, model)
-            if result > best_result:
+            if result[-1] > best_result[-1]:
                 print("Best result!")
                 best_result = result
                 torch.save({'state_dict': model.state_dict()}, ckpt)
                 not_best_count = 0
             else:
                 not_best_count += 1
+            print("\n----------------------------------------------")
             if not_best_count >= opt['early_stop']:
                 break
+    print("[Best result] precision: %f, recall: %f, f1-score: %f" % (best_result[0], best_result[1], best_result[2]))
 
 
 def test(test_loader, model):
@@ -90,25 +92,33 @@ def test(test_loader, model):
             sys.stdout.write('\r[step: %d/%d] acc: %f' % (i+1, step_num, avg_acc.avg))
             sys.stdout.flush()
     print("")
-    all_rel = torch.cat(all_rel, 0)
-    all_pred = torch.cat(all_pred, 0)
-    all_label = torch.cat(all_label, 0)
+    all_rel = torch.cat(all_rel, 0).detach().cpu().numpy()
+    all_pred = torch.cat(all_pred, 0).detach().cpu().numpy()
+    all_label = torch.cat(all_label, 0).detach().cpu().numpy()
 
-    # grouping bags of multi-labels
-    ind = all_label.sum(1) > 1
-    label_view = all_label[ind]
-    pred_view = all_pred[ind]
-    ind_false = (label_view * pred_view).sum(1) == 0
-    res_label = torch.argmax(label_view[ind_false], dim=1, keepdim=True)
-    label_view[ind_false] = torch.zeros(ind_false.sum(), rel_num, dtype=torch.long, device=label_view.device).scatter_(1, res_label, 1)
-    label_view[~ind_false] = pred_view[~ind_false]
-    all_label[ind] = label_view
-    assert (all_label.sum(1) > 1).sum().item() == 0
+    # solve the multi-relation problems
+    ind_mul = all_rel.sum(1) > 1
+    rel_mul = all_rel[ind_mul]
+    pred_mul = all_pred[ind_mul]
+    label_mul = all_label[ind_mul]
 
+    for i in range(len(rel_mul)):
+        # if no bag labels is YES, retain one of the multi-relations randomly
+        if label_mul[i].sum() == 0:
+            rel_mul[i] = np.eye(1, rel_num, rel_mul[i].argmax(), dtype=np.long).squeeze()
+        # if only one bag label is YES, retain its relation
+        elif label_mul[i].sum() == 1:
+            rel_mul[i] = label_mul[i]
+        # if more than one bag labels are YES
+        else:
+            # if the prediction is incorrect, retain one of the multi-relations randomly
+            if np.dot(label_mul[i], pred_mul[i]) == 0:
+                rel_mul[i] = np.eye(1, rel_num, rel_mul[i].argmax(), dtype=np.long).squeeze()
+            # if the prediction is correct, retain this relation
+            else:
+                rel_mul[i] = pred_mul[i]
+    all_rel[ind_mul] = rel_mul
     # evaluating
-    all_rel = all_rel.detach().cpu().numpy()
-    all_pred = all_pred.detach().cpu().numpy()
-    all_label = all_label.detach().cpu().numpy()
     results = np.zeros([rel_num - 1, 3], dtype=np.float32)
     for r in range(1, rel_num):
         ind = all_rel[:, r] == 1
@@ -117,9 +127,9 @@ def test(test_loader, model):
         results[r-1, 0] = metrics.precision_score(label[ind], pred[ind], zero_division=0)
         results[r-1, 1] = metrics.recall_score(label[ind], pred[ind])
         results[r-1, 2] = metrics.f1_score(label[ind], pred[ind])
-    result = results.mean(0)
+    result = results.mean(0) * 100
     print("[test result] precision: %f, recall: %f, f1-score: %f" % (result[0], result[1], result[2]))
-    return result[2]
+    return result
 
 
 if __name__ == '__main__':
