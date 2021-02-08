@@ -12,7 +12,7 @@ def config():
     parser.add_argument('--batch_size', default=100, type=int)
     parser.add_argument('--max_length', default=120, type=int)
     parser.add_argument('--max_pos_length', default=100, type=int)
-    parser.add_argument('--num_workers', default=4, type=int)
+    parser.add_argument('--num_workers', default=0, type=int)
     parser.add_argument('--lr', default=0.5, type=float)
     parser.add_argument('--epoch', default=100, type=int)
     parser.add_argument('--weight_decay', default=1e-5, type=float)

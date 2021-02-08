@@ -13,6 +13,7 @@ from utils import AverageMeter, setup_seed, partial_acc
 
 
 def train(train_loader, test_loader, opt):
+    print("--------------------------------------------")
     model = Model(train_loader.word_vec_dir, train_loader.rel_num, opt)
     if torch.cuda.is_available():
         model = model.cuda()
@@ -23,7 +24,6 @@ def train(train_loader, test_loader, opt):
     best_result = 0
     ckpt = os.path.join(opt['output_dir'], opt['name']+'.pth.tar')
     for epoch in range(opt['epoch']):
-        print("\n------------------- Epoch %d -------------------" % epoch)
         model.train()
         avg_loss = AverageMeter()
         avg_pos_acc = AverageMeter()
@@ -42,15 +42,15 @@ def train(train_loader, test_loader, opt):
             avg_loss.update(loss.item(), 1)
             avg_pos_acc.update(pos_acc, 1)
             avg_neg_acc.update(neg_acc, 1)
-            sys.stdout.write('\r[step: %d/%d] loss: %f, pos_acc: %f, neg acc: %f' %
-                             (i+1, step_num, avg_loss.avg, avg_pos_acc.avg, avg_neg_acc.avg))
+            sys.stdout.write('\r[Epoch %d step: %d/%d] loss: %f, pos_acc: %f, neg acc: %f' %
+                             (epoch, i+1, step_num, avg_loss.avg, avg_pos_acc.avg, avg_neg_acc.avg))
             sys.stdout.flush()
             # Optimize
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-        print("")
         if avg_pos_acc.avg > 0.5:
+            print("")
             result = test(test_loader, model)
             if result > best_result:
                 print("Best result!")

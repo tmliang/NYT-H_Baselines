@@ -18,7 +18,7 @@ class BiGRU(nn.Module):
                 nn.init.ones_(p[1])
 
     def forward(self, word, length):
-        X = nn.utils.rnn.pack_padded_sequence(word, length, enforce_sorted=False, batch_first=True)
+        X = nn.utils.rnn.pack_padded_sequence(word, length.cpu(), enforce_sorted=False, batch_first=True)
         X, _ = self.GRU(X)
         X, _ = nn.utils.rnn.pad_packed_sequence(X, batch_first=True)
         X = self.word_attention(X)
