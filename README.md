@@ -11,7 +11,7 @@ CUDA_VISIBLE_DEVICES=0 python main.py --encoder PCNN --lr 0.5 --batch_size 100
 
 ## Experimental Result
 
-<table align="middle">
+<table align="center">
     <tr>
         <th> Track </th><th> Model </th><th> Precsion </th> <th> Recall </th> <th> F1-Score </th>
     </tr>
